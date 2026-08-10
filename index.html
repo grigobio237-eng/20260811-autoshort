@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shorts Automation Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center py-12 font-sans">
+    <div class="w-full max-w-3xl px-4">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+                Shorts Automation Generator
+            </h1>
+            <p class="text-slate-400">AI를 활용하여 쇼츠 영상을 자동으로 생성하세요.</p>
+        </header>
+
+        <!-- Input Section -->
+        <main class="bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-700">
+            <form id="generateForm" class="space-y-6">
+                <div>
+                    <label for="topic" class="block text-sm font-medium text-slate-300 mb-2">쇼츠 주제 (Topic)</label>
+                    <input type="text" id="topic" name="topic" required
+                        placeholder="주제를 입력하세요. 예: 유럽 성당 녹색 지붕의 비밀"
+                        class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-100 placeholder-slate-500">
+                </div>
+                
+                <button type="submit" id="submitBtn"
+                    class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="btnText">Generate Shorts</span>
+                    <div id="btnLoader" class="loader ml-2 hidden"></div>
+                </button>
+            </form>
+
+            <!-- Status & Result Section -->
+            <div id="resultSection" class="mt-8 hidden">
+                <div class="border-t border-slate-700 pt-6">
+                    <h2 class="text-lg font-semibold mb-4 text-slate-200">생성 결과</h2>
+                    
+                    <!-- Status Message -->
+                    <div id="statusMessage" class="mb-4 text-sm text-blue-400 flex items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>요청을 처리하고 있습니다...</span>
+                    </div>
+
+                    <!-- Error Box -->
+                    <div id="errorBox" class="hidden bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg mb-4 text-sm">
+                    </div>
+
+                    <!-- Result Content -->
+                    <div id="resultContent" class="hidden bg-slate-900 p-4 rounded-lg border border-slate-700">
+                        <p class="text-green-400 font-medium mb-3">✅ 생성이 완료되었습니다!</p>
+                        
+                        <!-- Video Container -->
+                        <div id="videoContainer" class="hidden aspect-video w-full bg-black rounded-lg overflow-hidden mb-4">
+                            <video id="resultVideo" controls class="w-full h-full object-contain">
+                                <source src="" type="video/mp4">
+                                브라우저가 비디오 태그를 지원하지 않습니다.
+                            </video>
+                        </div>
+
+                        <!-- Script Data Container -->
+                        <div id="scriptContainer" class="hidden text-sm text-slate-300 whitespace-pre-wrap font-mono bg-slate-950 p-4 rounded-md overflow-x-auto">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = "https://caps-shoe-tribute-schema.trycloudflare.com/webhook-test/d3e018ca-6f90-4f85-ab56-6283df30a210";
+        
+        const form = document.getElementById('generateForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const resultSection = document.getElementById('resultSection');
+        const statusMessage = document.getElementById('statusMessage');
+        const errorBox = document.getElementById('errorBox');
+        const resultContent = document.getElementById('resultContent');
+        const videoContainer = document.getElementById('videoContainer');
+        const resultVideo = document.getElementById('resultVideo');
+        const scriptContainer = document.getElementById('scriptContainer');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const topic = document.getElementById('topic').value.trim();
+            if (!topic) return;
+
+            // UI 초기화 및 로딩 상태 설정
+            submitBtn.disabled = true;
+            btnText.textContent = "Generating...";
+            btnLoader.classList.remove('hidden');
+            
+            resultSection.classList.remove('hidden');
+            statusMessage.classList.remove('hidden');
+            errorBox.classList.add('hidden');
+            resultContent.classList.add('hidden');
+            videoContainer.classList.add('hidden');
+            scriptContainer.classList.add('hidden');
+
+            const statusTexts = [
+                "AI가 대본을 작성하고 있습니다...",
+                "이미지를 생성하는 중...",
+                "비디오와 오디오를 병합하고 있습니다...",
+                "거의 다 되었습니다..."
+            ];
+            
+            let statusIndex = 0;
+            const statusInterval = setInterval(() => {
+                statusIndex = (statusIndex + 1) % statusTexts.length;
+                statusMessage.querySelector('span').textContent = statusTexts[statusIndex];
+            }, 3000);
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ topic: topic })
+                });
+
+                clearInterval(statusInterval);
+                statusMessage.classList.add('hidden');
+
+                if (!response.ok) {
+                    throw new Error(`Webhook Error: ${response.status} ${response.statusText}`);
+                }
+
+                // response 형태에 따라 다르게 처리 (텍스트 또는 JSON)
+                const textResult = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(textResult);
+                } catch (e) {
+                    // JSON이 아니면 텍스트로 표시
+                }
+
+                resultContent.classList.remove('hidden');
+
+                if (data && data.videoUrl) {
+                    // 비디오 URL이 반환된 경우
+                    videoContainer.classList.remove('hidden');
+                    resultVideo.src = data.videoUrl;
+                    resultVideo.load();
+                } else {
+                    // 스크립트 텍스트나 다른 JSON 결과가 반환된 경우
+                    scriptContainer.classList.remove('hidden');
+                    if (data) {
+                        scriptContainer.textContent = JSON.stringify(data, null, 2);
+                    } else {
+                        scriptContainer.textContent = textResult || "성공적으로 요청이 처리되었으나 데이터가 비어있습니다.";
+                    }
+                }
+                
+            } catch (error) {
+                clearInterval(statusInterval);
+                statusMessage.classList.add('hidden');
+                
+                errorBox.classList.remove('hidden');
+                errorBox.textContent = `오류가 발생했습니다: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = "Generate Shorts";
+                btnLoader.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
