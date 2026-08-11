@@ -70,6 +70,20 @@
                 </div>
                 
                 <div class="mb-6">
+                    <label for="category" class="block text-sm font-medium text-slate-300 mb-2">업종 카테고리 (Category)</label>
+                    <select id="category" name="category" required
+                        class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-100 appearance-none">
+                        <option value="architecture">🏗️ 건축/부동산/인테리어</option>
+                        <option value="tech">💻 IT/테크/가전</option>
+                        <option value="food">🍳 요리/맛집/식품</option>
+                        <option value="health">💊 건강/의학/다이어트</option>
+                        <option value="finance">💰 재테크/금융/비즈니스</option>
+                        <option value="history">👽 역사/지식/미스터리</option>
+                        <option value="art">🎨 문화/예술 (음악/미술/전시)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-300 mb-2">영상 포맷 (Format)</label>
                     <div class="grid grid-cols-2 gap-4">
                         <label class="cursor-pointer group">
@@ -158,7 +172,16 @@
     </div>
 
     <script>
-        const WEBHOOK_URL = "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/d3e018ca-6f90-4f85-ab56-6283df30a210";
+        // 업종별 1단계 웹훅 URL 모음 (실제 n8n Production 주소 연결 완료)
+        const CATEGORY_WEBHOOKS = {
+            "architecture": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/d3e018ca-6f90-4f85-ab56-6283df30a210",
+            "tech": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-tech",
+            "food": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-food",
+            "health": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-health",
+            "finance": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-bank",
+            "history": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-history",
+            "art": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-art"
+        };
         
         const form = document.getElementById('generateForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -262,6 +285,7 @@
             const topic = document.getElementById('topic').value.trim();
             const channelName = document.getElementById('channelName').value.trim() || '알쓸건잡';
             const brandName = document.getElementById('brandName').value.trim() || '없음';
+            const category = document.getElementById('category').value;
             const format = document.querySelector('input[name="format"]:checked').value;
             if (!topic) return;
 
@@ -295,13 +319,16 @@
             const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
             try {
-                const response = await fetch(WEBHOOK_URL, {
+                const targetWebhookUrl = CATEGORY_WEBHOOKS[category];
+                
+                const response = await fetch(targetWebhookUrl, {
                     method: 'POST',
                     body: JSON.stringify({ 
                         topic: topic, 
                         format: format,
                         channelName: channelName,
                         brandName: brandName,
+                        category: category,
                         jobId: jobId
                     })
                 });
