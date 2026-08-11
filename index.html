@@ -128,10 +128,14 @@
 
                         <!-- Script Data Container -->
                         <div id="scriptSection" class="hidden">
-                            <label class="block text-sm font-medium text-slate-300 mb-2 mt-4">생성된 기획안 (자유롭게 수정하세요)</label>
-                            <textarea id="scriptContainer" class="w-full h-96 text-sm text-slate-300 font-mono bg-slate-950 p-4 rounded-md border border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none resize-y"></textarea>
+                            <label class="block text-sm font-medium text-slate-300 mb-4 mt-4">생성된 기획안 (자유롭게 수정하세요)</label>
                             
-                            <button type="button" id="proceedBtn" class="mt-4 w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <!-- 다이나믹 에디터 컨테이너 -->
+                            <div id="dynamicEditor" class="w-full h-[600px] overflow-y-auto bg-slate-950 p-4 rounded-md border border-slate-700 space-y-8 custom-scrollbar">
+                                <!-- 자바스크립트로 카드가 렌더링 됩니다 -->
+                            </div>
+                            
+                            <button type="button" id="proceedBtn" class="mt-6 w-full flex items-center justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <span id="proceedBtnText">✨ 2단계 진행: 음성 및 이미지 생성하기</span>
                                 <div id="proceedLoader" class="loader ml-2 hidden border-emerald-300 border-t-white"></div>
                             </button>
@@ -156,13 +160,86 @@
         const videoContainer = document.getElementById('videoContainer');
         const resultVideo = document.getElementById('resultVideo');
         const scriptSection = document.getElementById('scriptSection');
-        const scriptContainer = document.getElementById('scriptContainer');
+        const dynamicEditor = document.getElementById('dynamicEditor');
         const proceedBtn = document.getElementById('proceedBtn');
         const proceedBtnText = document.getElementById('proceedBtnText');
         const proceedLoader = document.getElementById('proceedLoader');
 
         // n8n Stage 2 Webhook URL (추후 진짜 2단계 주소로 교체하세요)
         const STAGE2_WEBHOOK_URL = "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/stage2-url";
+
+        // JSON 데이터를 받아 에디터 카드를 그리는 함수
+        function renderEditor(data) {
+            if (!data || !data.scenes) {
+                dynamicEditor.innerHTML = `<div class="text-red-400">올바른 JSON 데이터가 아닙니다.</div>`;
+                return;
+            }
+
+            let html = `
+                <!-- Global Info -->
+                <div class="bg-slate-900 p-5 rounded-lg border border-slate-800 shadow-md">
+                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">영상 제목 (Title)</label>
+                    <input type="text" id="edit-title" class="w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-white mb-5 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" value="${data.title || ''}">
+                    
+                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">핵심 콘셉트 (Concept)</label>
+                    <textarea id="edit-concept" class="w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-white h-24 focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-y">${data.concept || ''}</textarea>
+                </div>
+                
+                <div class="flex items-center gap-2 mt-8 mb-4">
+                    <div class="h-px bg-slate-800 flex-1"></div>
+                    <h3 class="text-lg font-bold text-white px-4">장면 구성 (Scenes)</h3>
+                    <div class="h-px bg-slate-800 flex-1"></div>
+                </div>
+                
+                <div id="scenes-container" class="space-y-6">
+            `;
+
+            data.scenes.forEach((scene, index) => {
+                html += `
+                    <div class="scene-card bg-slate-900 p-5 rounded-lg border border-slate-800 shadow-md transition-all hover:border-slate-600" data-scene-num="${scene.scene_number}">
+                        <div class="flex justify-between items-center mb-5 border-b border-slate-800 pb-3">
+                            <h4 class="text-emerald-400 font-extrabold text-lg flex items-center gap-2">
+                                <span class="bg-emerald-900/50 text-emerald-300 px-2 py-1 rounded text-sm">#${scene.scene_number}</span>
+                                컷
+                            </h4>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-slate-400">재생 시간(초):</span>
+                                <input type="number" class="scene-duration w-16 bg-slate-950 border border-slate-700 rounded p-1.5 text-white text-center focus:ring-1 focus:ring-emerald-500 outline-none" value="${scene.duration || 2}">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Left Column -->
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider"><span class="text-indigo-400">🎙️</span> 내레이션 대사 (TTS)</label>
+                                    <textarea class="scene-tts w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-white h-24 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-y">${scene.tts_text || ''}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider"><span class="text-yellow-400">📝</span> 강조 키워드 (자막)</label>
+                                    <input type="text" class="scene-keywords w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-yellow-500 outline-none transition-all" value="${scene.highlight_keywords || ''}">
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider"><span class="text-sky-400">🎬</span> 화면 연출 설명 (한국어)</label>
+                                    <textarea class="scene-desc w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-white h-24 focus:ring-2 focus:ring-sky-500 outline-none transition-all resize-y">${scene.scene_description || ''}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider"><span class="text-purple-400">✨</span> 이미지 프롬프트 (Midjourney)</label>
+                                    <textarea class="scene-prompt w-full bg-slate-950 border border-slate-700 rounded-md p-3 text-white h-32 focus:ring-2 focus:ring-purple-500 outline-none transition-all resize-y font-mono text-xs">${scene.image_prompt || ''}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            dynamicEditor.innerHTML = html;
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -239,9 +316,10 @@
                     // 스크립트 텍스트나 다른 JSON 결과가 반환된 경우
                     scriptSection.classList.remove('hidden');
                     if (data) {
-                        scriptContainer.value = JSON.stringify(data, null, 2);
+                        // JSON 텍스트 대신 예쁜 카드로 렌더링
+                        renderEditor(data);
                     } else {
-                        scriptContainer.value = textResult || "성공적으로 요청이 처리되었으나 데이터가 비어있습니다.";
+                        dynamicEditor.innerHTML = `<div class="text-red-400">${textResult || "성공적으로 요청이 처리되었으나 데이터가 비어있습니다."}</div>`;
                     }
                 }
                 
@@ -260,29 +338,44 @@
 
         // 2단계 진행 버튼 클릭 이벤트
         proceedBtn.addEventListener('click', async () => {
-            const editedScript = scriptContainer.value;
-            if (!editedScript) return;
-
-            proceedBtn.disabled = true;
-            proceedBtnText.textContent = "2단계 실행 중...";
-            proceedLoader.classList.remove('hidden');
-            errorBox.classList.add('hidden');
-
+            // DOM에서 수정된 데이터를 긁어모아 다시 JSON으로 완벽하게 조립합니다.
             try {
+                const finalData = {
+                    title: document.getElementById('edit-title').value,
+                    concept: document.getElementById('edit-concept').value,
+                    scenes: []
+                };
+
+                document.querySelectorAll('.scene-card').forEach(card => {
+                    finalData.scenes.push({
+                        scene_number: parseInt(card.dataset.sceneNum),
+                        duration: parseInt(card.querySelector('.scene-duration').value),
+                        scene_description: card.querySelector('.scene-desc').value,
+                        tts_text: card.querySelector('.scene-tts').value,
+                        highlight_keywords: card.querySelector('.scene-keywords').value,
+                        image_prompt: card.querySelector('.scene-prompt').value
+                    });
+                });
+
+                proceedBtn.disabled = true;
+                proceedBtnText.textContent = "2단계 실행 중...";
+                proceedLoader.classList.remove('hidden');
+                errorBox.classList.add('hidden');
+
                 const response = await fetch(STAGE2_WEBHOOK_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ scriptData: editedScript })
+                    body: JSON.stringify(finalData)
                 });
 
                 if (!response.ok) {
                     throw new Error(`Stage 2 Error: ${response.status} ${response.statusText}`);
                 }
 
-                alert("2단계(음성 및 이미지 생성) 작업이 성공적으로 서버에 전달되었습니다!");
+                alert("수정된 완벽한 기획안이 2단계(음성 및 이미지 생성) 서버에 성공적으로 전달되었습니다!");
                 
             } catch (error) {
                 errorBox.classList.remove('hidden');
-                errorBox.textContent = `2단계 실행 오류: ${error.message}`;
+                errorBox.textContent = `데이터 전송 오류: ${error.message}`;
             } finally {
                 proceedBtn.disabled = false;
                 proceedBtnText.textContent = "✨ 2단계 진행: 음성 및 이미지 생성하기";
