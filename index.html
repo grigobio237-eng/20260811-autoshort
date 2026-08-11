@@ -134,6 +134,17 @@
                             <div id="dynamicEditor" class="w-full h-[600px] overflow-y-auto bg-slate-950 p-4 rounded-md border border-slate-700 space-y-8 custom-scrollbar">
                                 <!-- 자바스크립트로 카드가 렌더링 됩니다 -->
                             </div>
+
+                            <!-- Audio Container (2단계 음성 확인용) -->
+                            <div id="audioContainer" class="hidden w-full bg-slate-900 p-4 rounded-lg border border-slate-700 mt-6">
+                                <label class="block text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
+                                    <span class="text-xl">🎙️</span> 완성된 AI 내레이션
+                                </label>
+                                <audio id="resultAudio" controls class="w-full h-12 outline-none">
+                                    <source src="" type="audio/mpeg">
+                                    브라우저가 오디오 태그를 지원하지 않습니다.
+                                </audio>
+                            </div>
                             
                             <button type="button" id="proceedBtn" class="mt-6 w-full flex items-center justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <span id="proceedBtnText">✨ 2단계 진행: 음성 및 이미지 생성하기</span>
@@ -377,6 +388,7 @@
                 proceedLoader.classList.remove('hidden');
                 errorBox.classList.add('hidden');
 
+                // 1. n8n 워크플로우3 (음성 생성) 호출
                 const response = await fetch(STAGE2_WEBHOOK_URL, {
                     method: 'POST',
                     body: JSON.stringify(finalData)
@@ -386,7 +398,43 @@
                     throw new Error(`Stage 2 Error: ${response.status} ${response.statusText}`);
                 }
 
-                alert("수정된 완벽한 기획안이 2단계(음성 및 이미지 생성) 서버에 성공적으로 전달되었습니다!");
+                // 2. n8n 워크플로우4 (음성 확인) 주소 생성
+                const getVoiceUrl = `https://caps-shoe-tribute-schema.trycloudflare.com/webhook/get-voice?title=${encodeURIComponent(finalData.title)}`;
+                
+                // 3. 5초마다 파일이 완성되었는지 찔러보기 (Polling)
+                let stage2PollingInterval = setInterval(async () => {
+                    try {
+                        const checkRes = await fetch(getVoiceUrl);
+                        const contentType = checkRes.headers.get("content-type");
+                        
+                        // 만약 n8n이 {"status": "processing"} (JSON)을 돌려줬다면 아직 요리 중이라는 뜻
+                        if (contentType && contentType.includes("application/json")) {
+                            return; 
+                        }
+                        
+                        // JSON이 아니라면 드디어 MP3 바이너리 파일이 도착한 것입니다!
+                        clearInterval(stage2PollingInterval);
+                        
+                        // 파일을 받아서 브라우저 메모리에 올리고 주소를 만듭니다
+                        const blob = await checkRes.blob();
+                        const audioUrl = URL.createObjectURL(blob);
+                        
+                        // 화면 디자인 업데이트
+                        proceedBtnText.textContent = "✅ 음성 생성 완료!";
+                        proceedLoader.classList.add('hidden');
+                        proceedBtn.disabled = false;
+                        
+                        // 오디오 플레이어에 주소를 넣고 짠! 하고 보여줍니다.
+                        const audioPlayer = document.getElementById('resultAudio');
+                        const audioContainer = document.getElementById('audioContainer');
+                        audioPlayer.src = audioUrl;
+                        audioContainer.classList.remove('hidden');
+                        
+                    } catch (pollErr) {
+                        console.error("Audio Polling Error:", pollErr);
+                    }
+                }, 5000);
+                
                 
             } catch (error) {
                 errorBox.classList.remove('hidden');
