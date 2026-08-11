@@ -127,7 +127,14 @@
                         </div>
 
                         <!-- Script Data Container -->
-                        <div id="scriptContainer" class="hidden text-sm text-slate-300 whitespace-pre-wrap font-mono bg-slate-950 p-4 rounded-md overflow-x-auto">
+                        <div id="scriptSection" class="hidden">
+                            <label class="block text-sm font-medium text-slate-300 mb-2 mt-4">생성된 기획안 (자유롭게 수정하세요)</label>
+                            <textarea id="scriptContainer" class="w-full h-96 text-sm text-slate-300 font-mono bg-slate-950 p-4 rounded-md border border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none resize-y"></textarea>
+                            
+                            <button type="button" id="proceedBtn" class="mt-4 w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span id="proceedBtnText">✨ 2단계 진행: 음성 및 이미지 생성하기</span>
+                                <div id="proceedLoader" class="loader ml-2 hidden border-emerald-300 border-t-white"></div>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -148,7 +155,14 @@
         const resultContent = document.getElementById('resultContent');
         const videoContainer = document.getElementById('videoContainer');
         const resultVideo = document.getElementById('resultVideo');
+        const scriptSection = document.getElementById('scriptSection');
         const scriptContainer = document.getElementById('scriptContainer');
+        const proceedBtn = document.getElementById('proceedBtn');
+        const proceedBtnText = document.getElementById('proceedBtnText');
+        const proceedLoader = document.getElementById('proceedLoader');
+
+        // n8n Stage 2 Webhook URL (추후 진짜 2단계 주소로 교체하세요)
+        const STAGE2_WEBHOOK_URL = "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/stage2-url";
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -169,7 +183,7 @@
             errorBox.classList.add('hidden');
             resultContent.classList.add('hidden');
             videoContainer.classList.add('hidden');
-            scriptContainer.classList.add('hidden');
+            scriptSection.classList.add('hidden');
 
             const statusTexts = [
                 "AI가 대본을 작성하고 있습니다...",
@@ -223,11 +237,11 @@
                     resultVideo.load();
                 } else {
                     // 스크립트 텍스트나 다른 JSON 결과가 반환된 경우
-                    scriptContainer.classList.remove('hidden');
+                    scriptSection.classList.remove('hidden');
                     if (data) {
-                        scriptContainer.textContent = JSON.stringify(data, null, 2);
+                        scriptContainer.value = JSON.stringify(data, null, 2);
                     } else {
-                        scriptContainer.textContent = textResult || "성공적으로 요청이 처리되었으나 데이터가 비어있습니다.";
+                        scriptContainer.value = textResult || "성공적으로 요청이 처리되었으나 데이터가 비어있습니다.";
                     }
                 }
                 
@@ -241,6 +255,38 @@
                 submitBtn.disabled = false;
                 btnText.textContent = "Generate Shorts";
                 btnLoader.classList.add('hidden');
+            }
+        });
+
+        // 2단계 진행 버튼 클릭 이벤트
+        proceedBtn.addEventListener('click', async () => {
+            const editedScript = scriptContainer.value;
+            if (!editedScript) return;
+
+            proceedBtn.disabled = true;
+            proceedBtnText.textContent = "2단계 실행 중...";
+            proceedLoader.classList.remove('hidden');
+            errorBox.classList.add('hidden');
+
+            try {
+                const response = await fetch(STAGE2_WEBHOOK_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ scriptData: editedScript })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Stage 2 Error: ${response.status} ${response.statusText}`);
+                }
+
+                alert("2단계(음성 및 이미지 생성) 작업이 성공적으로 서버에 전달되었습니다!");
+                
+            } catch (error) {
+                errorBox.classList.remove('hidden');
+                errorBox.textContent = `2단계 실행 오류: ${error.message}`;
+            } finally {
+                proceedBtn.disabled = false;
+                proceedBtnText.textContent = "✨ 2단계 진행: 음성 및 이미지 생성하기";
+                proceedLoader.classList.add('hidden');
             }
         });
     </script>
