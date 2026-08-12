@@ -52,33 +52,40 @@
                 <!-- 시나리오 선택 -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-300 mb-3">기획 시나리오 선택</label>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
                         <label class="cursor-pointer group">
                             <input type="radio" name="scenario" value="product_only" class="peer sr-only" checked onchange="toggleAssetUI()">
-                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center h-full">
                                 <div class="text-2xl mb-2">📦</div>
                                 <div class="font-semibold text-sm">상품 단독 홍보</div>
                             </div>
                         </label>
                         <label class="cursor-pointer group">
                             <input type="radio" name="scenario" value="model_product" class="peer sr-only" onchange="toggleAssetUI()">
-                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center h-full">
                                 <div class="text-2xl mb-2">👩‍💼+📦</div>
                                 <div class="font-semibold text-sm">모델 + 상품 리뷰</div>
                             </div>
                         </label>
                         <label class="cursor-pointer group">
                             <input type="radio" name="scenario" value="vlog" class="peer sr-only" onchange="toggleAssetUI()">
-                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center h-full">
                                 <div class="text-2xl mb-2">📸</div>
                                 <div class="font-semibold text-sm">인플루언서 브이로그</div>
                             </div>
                         </label>
                         <label class="cursor-pointer group">
-                            <input type="radio" name="scenario" value="none" class="peer sr-only" onchange="toggleAssetUI()">
-                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                            <input type="radio" name="scenario" value="industry" class="peer sr-only" onchange="toggleAssetUI()">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center h-full">
+                                <div class="text-2xl mb-2">🏭</div>
+                                <div class="font-semibold text-sm">업종별 맞춤 기획</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group col-span-2 lg:col-span-1">
+                            <input type="radio" name="scenario" value="free_topic" class="peer sr-only" onchange="toggleAssetUI()">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center h-full">
                                 <div class="text-2xl mb-2">📝</div>
-                                <div class="font-semibold text-sm">자유 주제 (에셋 없음)</div>
+                                <div class="font-semibold text-sm">순수 일상/자유 기획</div>
                             </div>
                         </label>
                     </div>
@@ -344,13 +351,20 @@
                 productSection.classList.add('hidden');
                 if(productDetailSection) productDetailSection.classList.add('hidden');
                 // 브이로그는 카테고리 둘 다 숨김
-            } else if (scenario === 'none') {
+            } else if (scenario === 'industry') {
                 modelSection.classList.add('hidden');
                 productSection.classList.add('hidden');
                 runBtn.classList.add('hidden');
                 if(assetContainer) assetContainer.classList.add('hidden');
                 if(productDetailSection) productDetailSection.classList.add('hidden');
                 if(industryCategorySection) industryCategorySection.classList.remove('hidden');
+            } else if (scenario === 'free_topic') {
+                modelSection.classList.add('hidden');
+                productSection.classList.add('hidden');
+                runBtn.classList.add('hidden');
+                if(assetContainer) assetContainer.classList.add('hidden');
+                if(productDetailSection) productDetailSection.classList.add('hidden');
+                // 자유 기획은 카테고리 둘 다 숨김
             }
         }
 
