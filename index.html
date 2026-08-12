@@ -318,14 +318,12 @@
             const scenario = document.querySelector('input[name="scenario"]:checked').value;
             const modelSection = document.getElementById('modelAssetSection');
             const productSection = document.getElementById('productAssetSection');
-            const runBtn = document.getElementById('runVisionBtn');
             const assetContainer = document.getElementById('assetContainer');
             const productDetailSection = document.getElementById('productDetailSection');
             const industryCategorySection = document.getElementById('industryCategorySection');
             const productCategorySection = document.getElementById('productCategorySection');
             
-            // Show run button and asset container by default
-            runBtn.classList.remove('hidden');
+            // Show asset container by default
             if(assetContainer) assetContainer.classList.remove('hidden');
 
             // Reset category visibility
@@ -350,14 +348,12 @@
             } else if (scenario === 'industry') {
                 modelSection.classList.add('hidden');
                 productSection.classList.add('hidden');
-                runBtn.classList.add('hidden');
                 if(assetContainer) assetContainer.classList.add('hidden');
                 if(productDetailSection) productDetailSection.classList.add('hidden');
                 if(industryCategorySection) industryCategorySection.classList.remove('hidden');
             } else if (scenario === 'free_topic') {
                 modelSection.classList.add('hidden');
                 productSection.classList.add('hidden');
-                runBtn.classList.add('hidden');
                 if(assetContainer) assetContainer.classList.add('hidden');
                 if(productDetailSection) productDetailSection.classList.add('hidden');
                 // 자유 기획은 카테고리 둘 다 숨김
