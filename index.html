@@ -105,6 +105,7 @@
                             <option value="human_a.png">사람 모델 A (human_a.png)</option>
                         </select>
                         <input type="file" id="modelUpload" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                        <img id="modelPreview" class="hidden mt-3 w-full h-40 object-contain rounded-lg border border-slate-700 bg-slate-950/50" alt="Model Preview">
                     </div>
 
                     <!-- 상품 에셋 -->
@@ -117,6 +118,7 @@
                             <option value="smart_watch.png">스마트워치 (smart_watch.png)</option>
                         </select>
                         <input type="file" id="productUpload" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                        <img id="productPreview" class="hidden mt-3 w-full h-40 object-contain rounded-lg border border-slate-700 bg-slate-950/50" alt="Product Preview">
                     </div>
                 </div>
 
@@ -383,7 +385,31 @@
             toggleAssetUI();
             handleAssetChange('model');
             handleAssetChange('product');
+
+            // 미리보기 이벤트 바인딩
+            document.getElementById('modelUpload').addEventListener('change', function() {
+                setupImagePreview(this, 'modelPreview');
+            });
+            document.getElementById('productUpload').addEventListener('change', function() {
+                setupImagePreview(this, 'productPreview');
+            });
         });
+
+        // 이미지 미리보기 설정 함수
+        function setupImagePreview(input, previewId) {
+            const preview = document.getElementById(previewId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = "";
+                preview.classList.add('hidden');
+            }
+        }
 
         // 파일을 Base64로 변환하는 유틸리티 함수
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
