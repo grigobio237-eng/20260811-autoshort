@@ -385,31 +385,86 @@
             handleAssetChange('product');
         });
 
+        // 파일을 Base64로 변환하는 유틸리티 함수
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]); // base64 string만 추출
+            reader.onerror = error => reject(error);
+        });
+
         document.getElementById('runVisionBtn').addEventListener('click', async () => {
             const btn = document.getElementById('runVisionBtn');
             const loader = document.getElementById('visionLoader');
             const scenario = document.querySelector('input[name="scenario"]:checked').value;
             
+            // 시나리오에 따라 분석할 파일 input 결정
+            let fileInput = null;
+            if (scenario === 'product_only' || scenario === 'model_product') {
+                fileInput = document.getElementById('productUpload');
+            } else if (scenario === 'vlog') {
+                fileInput = document.getElementById('modelUpload');
+            }
+
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                alert("분석할 이미지를 업로드해 주세요! (+ 새 이미지 업로드 선택)");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            
             btn.disabled = true;
             loader.classList.remove('hidden');
             
-            // TODO: 실제로는 선택된 이미지를 Base64로 인코딩하여 n8n 기획엔진 Webhook으로 전송합니다.
-            console.log(`[Vision Engine] 시나리오 '${scenario}' 실행 중...`);
-            
-            // 가상 딜레이 (n8n 분석 시간 시뮬레이션)
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // 임시 결과 반영
-            const topicInput = document.getElementById('topic');
-            topicInput.value = "[AI 자동 기획] 업로드된 이미지 기반 상품 홍보 전략 및 시나리오";
-            
-            // 강조 애니메이션
-            topicInput.classList.add('ring-4', 'ring-emerald-500');
-            setTimeout(() => topicInput.classList.remove('ring-4', 'ring-emerald-500'), 1000);
-            
-            btn.disabled = false;
-            loader.classList.add('hidden');
-            alert('AI 이미지 분석 완료! 2단계 대본 자동화 엔진으로 넘어갑니다.');
+            try {
+                // 1. 이미지 Base64 인코딩
+                const base64Data = await fileToBase64(file);
+                const filename = file.name;
+
+                // 2. n8n 비전 기획 엔진으로 전송
+                console.log(`[Vision Engine] '${filename}' 전송 중...`);
+                const response = await fetch("http://localhost:5678/webhook/vision-engine", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        scenario: scenario,
+                        filename: filename,
+                        image: base64Data
+                    })
+                });
+
+                if (!response.ok) throw new Error("n8n 서버 응답 오류");
+                
+                const result = await response.json();
+                console.log("[Vision Engine] 분석 완료:", result);
+
+                // 3. n8n에서 응답받은 JSON 데이터를 화면 빈칸에 자동으로 채워넣기
+                const topicInput = document.getElementById('topic');
+                
+                if (scenario === 'vlog') {
+                    // 브이로그는 주제만 반환
+                    topicInput.value = result.Topic || result.topic || result.text || "[AI 자동 기획] 브이로그 주제를 불러왔습니다.";
+                } else {
+                    // 상품은 여러 데이터를 반환
+                    topicInput.value = result.productName || "[AI 자동 기획] 상품 분석 완료";
+                    if (result.price) document.getElementById('productPrice').value = result.price;
+                    if (result.sellingPoints) document.getElementById('productSellingPoints').value = result.sellingPoints;
+                    if (result.specs) document.getElementById('productSpecs').value = result.specs;
+                    if (result.target) document.getElementById('productTarget').value = result.target;
+                }
+                
+                // 강조 애니메이션
+                topicInput.classList.add('ring-4', 'ring-emerald-500');
+                setTimeout(() => topicInput.classList.remove('ring-4', 'ring-emerald-500'), 1000);
+                
+                alert('AI 이미지 분석 완료! 2단계 폼이 자동으로 채워졌습니다.');
+            } catch (err) {
+                console.error("비전 엔진 통신 에러:", err);
+                alert("이미지 분석 중 오류가 발생했습니다. n8n 워크플로우가 켜져 있는지 확인해 주세요.");
+            } finally {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+            }
         });
         // ---------------------------------------------------------
         const CATEGORY_WEBHOOKS = {
