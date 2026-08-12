@@ -52,7 +52,7 @@
                 <!-- 시나리오 선택 -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-300 mb-3">기획 시나리오 선택</label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <label class="cursor-pointer group">
                             <input type="radio" name="scenario" value="product_only" class="peer sr-only" checked onchange="toggleAssetUI()">
                             <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
@@ -74,11 +74,18 @@
                                 <div class="font-semibold text-sm">인플루언서 브이로그</div>
                             </div>
                         </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="scenario" value="none" class="peer sr-only" onchange="toggleAssetUI()">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                                <div class="text-2xl mb-2">📝</div>
+                                <div class="font-semibold text-sm">자유 주제 (에셋 없음)</div>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
                 <!-- 에셋 선택 영역 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
+                <div id="assetContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
                     
                     <!-- 모델(캐릭터) 에셋 -->
                     <div id="modelAssetSection" class="hidden">
@@ -253,7 +260,13 @@
             const scenario = document.querySelector('input[name="scenario"]:checked').value;
             const modelSection = document.getElementById('modelAssetSection');
             const productSection = document.getElementById('productAssetSection');
+            const runBtn = document.getElementById('runVisionBtn');
+            const assetContainer = document.getElementById('assetContainer');
             
+            // Show run button and asset container by default
+            runBtn.classList.remove('hidden');
+            assetContainer.classList.remove('hidden');
+
             if (scenario === 'product_only') {
                 modelSection.classList.add('hidden');
                 productSection.classList.remove('hidden');
@@ -263,6 +276,11 @@
             } else if (scenario === 'vlog') {
                 modelSection.classList.remove('hidden');
                 productSection.classList.add('hidden');
+            } else if (scenario === 'none') {
+                modelSection.classList.add('hidden');
+                productSection.classList.add('hidden');
+                runBtn.classList.add('hidden');
+                assetContainer.classList.add('hidden');
             }
         }
 
