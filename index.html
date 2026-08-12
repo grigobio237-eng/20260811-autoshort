@@ -427,6 +427,12 @@
             let productFile = null;
             let modelFile = null;
 
+            // 자유 기획 시나리오는 비전 분석 불필요
+            if (scenario === 'free') {
+                alert("자유 기획 모드는 AI 이미지 분석(1단계)이 필요 없습니다. 2단계 빈칸을 직접 채워주세요!");
+                return;
+            }
+
             // 시나리오에 따라 필요한 파일 추출
             if (scenario === 'product_only') {
                 const productInput = document.getElementById('productUpload');
@@ -452,14 +458,6 @@
                 }
                 productFile = productInput.files[0];
                 modelFile = modelInput.files[0];
-            } else {
-                // 자유 기획 등 기타 시나리오는 임시로 상품 이미지를 필수로 설정 (추후 변경 가능)
-                const productInput = document.getElementById('productUpload');
-                if (!productInput || !productInput.files || productInput.files.length === 0) {
-                    alert("분석할 이미지를 업로드해 주세요!");
-                    return;
-                }
-                productFile = productInput.files[0];
             }
             
             btn.disabled = true;
