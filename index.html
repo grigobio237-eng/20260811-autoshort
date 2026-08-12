@@ -42,8 +42,82 @@
             <p class="text-slate-400">AI를 활용하여 쇼츠 영상을 자동으로 생성하세요.</p>
         </header>
 
-        <!-- Input Section -->
+        <!-- Step 1: Vision Planning Engine -->
+        <main class="bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-700 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4 flex items-center gap-2">
+                <span class="text-blue-400">Step 1.</span> 비전 기획 엔진 (에셋 라이브러리)
+            </h2>
+            
+            <form id="visionForm" class="space-y-6">
+                <!-- 시나리오 선택 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-300 mb-3">기획 시나리오 선택</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="scenario" value="product_only" class="peer sr-only" checked onchange="toggleAssetUI()">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                                <div class="text-2xl mb-2">📦</div>
+                                <div class="font-semibold text-sm">상품 단독 홍보</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="scenario" value="model_product" class="peer sr-only" onchange="toggleAssetUI()">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                                <div class="text-2xl mb-2">👩‍💼+📦</div>
+                                <div class="font-semibold text-sm">모델 + 상품 리뷰</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="scenario" value="vlog" class="peer sr-only" onchange="toggleAssetUI()">
+                            <div class="p-4 rounded-lg border border-slate-600 bg-slate-900 text-slate-400 group-hover:bg-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/20 peer-checked:text-emerald-400 transition-all text-center">
+                                <div class="text-2xl mb-2">📸</div>
+                                <div class="font-semibold text-sm">인플루언서 브이로그</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 에셋 선택 영역 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/50 p-6 rounded-xl border border-slate-700">
+                    
+                    <!-- 모델(캐릭터) 에셋 -->
+                    <div id="modelAssetSection" class="hidden">
+                        <label class="block text-sm font-medium text-slate-300 mb-2">👩‍💼 모델 (캐릭터) 에셋</label>
+                        <select id="modelSelect" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-200 mb-3" onchange="handleAssetChange('model')">
+                            <option value="new">+ 📂 새 모델 이미지 업로드...</option>
+                            <option value="" disabled>--- 저장된 모델 라이브러리 ---</option>
+                            <option value="cat_model.png">고양이 캐릭터 (cat_model.png)</option>
+                            <option value="dog_model.png">강아지 캐릭터 (dog_model.png)</option>
+                            <option value="human_a.png">사람 모델 A (human_a.png)</option>
+                        </select>
+                        <input type="file" id="modelUpload" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                    </div>
+
+                    <!-- 상품 에셋 -->
+                    <div id="productAssetSection">
+                        <label class="block text-sm font-medium text-slate-300 mb-2">📦 상품 에셋</label>
+                        <select id="productSelect" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-200 mb-3" onchange="handleAssetChange('product')">
+                            <option value="new">+ 📂 새 상품 이미지 업로드...</option>
+                            <option value="" disabled>--- 저장된 상품 라이브러리 ---</option>
+                            <option value="vitamin_c.png">비타민C 영양제 (vitamin_c.png)</option>
+                            <option value="smart_watch.png">스마트워치 (smart_watch.png)</option>
+                        </select>
+                        <input type="file" id="productUpload" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                    </div>
+                </div>
+
+                <button type="button" id="runVisionBtn" class="w-full flex items-center justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                    <span>✨ AI 기획안 추출하기 (Vision Analysis)</span>
+                    <div id="visionLoader" class="loader ml-2 hidden border-emerald-700 border-t-white"></div>
+                </button>
+            </form>
+        </main>
+
+        <!-- Step 2: Prompt Engine (Existing Section) -->
         <main class="bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-700">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4 flex items-center gap-2">
+                <span class="text-blue-400">Step 2.</span> 대본 자동화 엔진 (Prompt Generator)
+            </h2>
             <form id="generateForm" class="space-y-6">
                 <div class="mb-6">
                     <label for="topic" class="block text-sm font-medium text-slate-300 mb-2">쇼츠 주제 (Topic)</label>
@@ -172,7 +246,70 @@
     </div>
 
     <script>
-        // 업종별 1단계 웹훅 URL 모음 (실제 n8n Production 주소 연결 완료)
+        // ---------------------------------------------------------
+        // Step 1: 비전 기획 엔진 UI 제어 로직
+        // ---------------------------------------------------------
+        function toggleAssetUI() {
+            const scenario = document.querySelector('input[name="scenario"]:checked').value;
+            const modelSection = document.getElementById('modelAssetSection');
+            const productSection = document.getElementById('productAssetSection');
+            
+            if (scenario === 'product_only') {
+                modelSection.classList.add('hidden');
+                productSection.classList.remove('hidden');
+            } else if (scenario === 'model_product') {
+                modelSection.classList.remove('hidden');
+                productSection.classList.remove('hidden');
+            } else if (scenario === 'vlog') {
+                modelSection.classList.remove('hidden');
+                productSection.classList.add('hidden');
+            }
+        }
+
+        function handleAssetChange(type) {
+            const select = document.getElementById(`${type}Select`);
+            const upload = document.getElementById(`${type}Upload`);
+            
+            if (select.value === 'new') {
+                upload.classList.remove('hidden');
+            } else {
+                upload.classList.add('hidden');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleAssetUI();
+            handleAssetChange('model');
+            handleAssetChange('product');
+        });
+
+        document.getElementById('runVisionBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('runVisionBtn');
+            const loader = document.getElementById('visionLoader');
+            const scenario = document.querySelector('input[name="scenario"]:checked').value;
+            
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+            
+            // TODO: 실제로는 선택된 이미지를 Base64로 인코딩하여 n8n 기획엔진 Webhook으로 전송합니다.
+            console.log(`[Vision Engine] 시나리오 '${scenario}' 실행 중...`);
+            
+            // 가상 딜레이 (n8n 분석 시간 시뮬레이션)
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // 임시 결과 반영
+            const topicInput = document.getElementById('topic');
+            topicInput.value = "[AI 자동 기획] 업로드된 이미지 기반 상품 홍보 전략 및 시나리오";
+            
+            // 강조 애니메이션
+            topicInput.classList.add('ring-4', 'ring-emerald-500');
+            setTimeout(() => topicInput.classList.remove('ring-4', 'ring-emerald-500'), 1000);
+            
+            btn.disabled = false;
+            loader.classList.add('hidden');
+            alert('AI 이미지 분석 완료! 2단계 대본 자동화 엔진으로 넘어갑니다.');
+        });
+        // ---------------------------------------------------------
         const CATEGORY_WEBHOOKS = {
             "architecture": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/d3e018ca-6f90-4f85-ab56-6283df30a210",
             "tech": "https://caps-shoe-tribute-schema.trycloudflare.com/webhook/prompt-tech",
