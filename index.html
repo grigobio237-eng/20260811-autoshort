@@ -48,7 +48,7 @@
                 <span class="text-blue-400">Step 1.</span> 비전 기획 엔진 (에셋 라이브러리)
             </h2>
             
-            <form id="visionForm" class="space-y-6">
+            <form id="unifiedForm" class="space-y-6">
                 <!-- 시나리오 선택 -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-300 mb-3">기획 시나리오 선택</label>
@@ -121,12 +121,7 @@
                         <img id="productPreview" class="hidden mt-3 w-full h-40 object-contain rounded-lg border border-slate-700 bg-slate-950/50" alt="Product Preview">
                     </div>
                 </div>
-
-                <button type="button" id="runVisionBtn" class="w-full flex items-center justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
-                    <span>✨ AI 기획안 추출하기 (Vision Analysis)</span>
-                    <div id="visionLoader" class="loader ml-2 hidden border-emerald-700 border-t-white"></div>
-                </button>
-            </form>
+            <!-- runVisionBtn was here and is now removed -->
         </main>
 
         <!-- Step 2: Prompt Engine (Existing Section) -->
@@ -134,7 +129,6 @@
             <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4 flex items-center gap-2">
                 <span class="text-blue-400">Step 2.</span> 대본 자동화 엔진 (Prompt Generator)
             </h2>
-            <form id="generateForm" class="space-y-6">
                 <div class="mb-6">
                     <label for="topic" class="block text-sm font-medium text-slate-300 mb-2">쇼츠 주제 (Topic)</label>
                     <input type="text" id="topic" name="topic" required
@@ -534,7 +528,7 @@
             "art": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-art"
         };
         
-        const form = document.getElementById('generateForm');
+        const form = document.getElementById('unifiedForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const btnLoader = document.getElementById('btnLoader');
@@ -543,7 +537,6 @@
         const errorBox = document.getElementById('errorBox');
         const resultContent = document.getElementById('resultContent');
         const videoContainer = document.getElementById('videoContainer');
-        const resultVideo = document.getElementById('resultVideo');
         const scriptSection = document.getElementById('scriptSection');
         const dynamicEditor = document.getElementById('dynamicEditor');
         const proceedBtn = document.getElementById('proceedBtn');
@@ -553,6 +546,7 @@
         // n8n Webhook URLs
         const CHECK_STATUS_WEBHOOK_URL = "https://repair-control-fee-epic.trycloudflare.com/webhook/check-script-status";
         const STAGE2_WEBHOOK_URL = "https://repair-control-fee-epic.trycloudflare.com/webhook/stage2-url";
+        const UNIFIED_VISION_WEBHOOK_URL = "https://repair-control-fee-epic.trycloudflare.com/webhook/unified-vision-script";
 
         let statusInterval;
         let pollingInterval;
@@ -633,12 +627,43 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const scenario = document.querySelector('input[name="scenario"]:checked').value;
             const topic = document.getElementById('topic').value.trim();
             const channelName = document.getElementById('channelName').value.trim() || '알쓸건잡';
             const brandName = document.getElementById('brandName').value.trim() || '없음';
             const category = document.getElementById('category').value;
             const format = document.querySelector('input[name="format"]:checked').value;
             if (!topic) return;
+
+            let productFile = null;
+            let modelFile = null;
+
+            // 시나리오에 따른 이미지 파일 검증
+            if (scenario === 'product_only') {
+                const productInput = document.getElementById('productUpload');
+                if (!productInput || !productInput.files || productInput.files.length === 0) {
+                    alert("상품 이미지를 업로드해 주세요!");
+                    return;
+                }
+                productFile = productInput.files[0];
+            } else if (scenario === 'vlog') {
+                const modelInput = document.getElementById('modelUpload');
+                if (!modelInput || !modelInput.files || modelInput.files.length === 0) {
+                    alert("브이로그(인플루언서) 이미지를 업로드해 주세요!");
+                    return;
+                }
+                modelFile = modelInput.files[0];
+            } else if (scenario === 'model_product') {
+                const productInput = document.getElementById('productUpload');
+                const modelInput = document.getElementById('modelUpload');
+                if (!productInput || !productInput.files || productInput.files.length === 0 ||
+                    !modelInput || !modelInput.files || modelInput.files.length === 0) {
+                    alert("상품 이미지와 모델 이미지를 모두 업로드해 주세요!");
+                    return;
+                }
+                productFile = productInput.files[0];
+                modelFile = modelInput.files[0];
+            }
 
             // UI 초기화 및 로딩 상태 설정
             submitBtn.disabled = true;
@@ -661,28 +686,65 @@
             ];
             
             let statusIndex = 0;
-            const statusInterval = setInterval(() => {
+            statusInterval = setInterval(() => {
                 statusIndex = (statusIndex + 1) % statusTexts.length;
                 statusMessage.querySelector('span').textContent = statusTexts[statusIndex];
             }, 3000);
 
-            // 1단계 시작 요청: 고유한 주문 번호(Job ID) 생성
+            // 고유한 주문 번호(Job ID) 생성
             const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
             try {
-                const targetWebhookUrl = CATEGORY_WEBHOOKS[category];
-                
-                const response = await fetch(targetWebhookUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        topic: topic, 
-                        format: format,
-                        channelName: channelName,
-                        brandName: brandName,
-                        category: category,
-                        jobId: jobId
-                    })
-                });
+                let response;
+
+                if (scenario === 'industry') {
+                    // 기존 텍스트 전용 파이프라인 호출 (JSON)
+                    const targetWebhookUrl = CATEGORY_WEBHOOKS[category];
+                    response = await fetch(targetWebhookUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            topic: topic, 
+                            format: format,
+                            channelName: channelName,
+                            brandName: brandName,
+                            category: category,
+                            jobId: jobId,
+                            scenario: scenario
+                        })
+                    });
+                } else {
+                    // 신규 통합 비전 파이프라인 호출 (FormData)
+                    const formData = new FormData();
+                    formData.append('jobId', jobId);
+                    formData.append('scenario', scenario);
+                    formData.append('topic', topic);
+                    formData.append('format', format);
+                    formData.append('channelName', channelName);
+                    formData.append('brandName', brandName);
+
+                    // 팩트(상품 정보) 데이터 추가
+                    if (scenario === 'product_only' || scenario === 'model_product') {
+                        formData.append('productName', document.getElementById('productName').value);
+                        formData.append('productPrice', document.getElementById('productPrice').value);
+                        formData.append('productSellingPoints', document.getElementById('productSellingPoints').value);
+                        formData.append('productSpecs', document.getElementById('productSpecs').value);
+                        formData.append('productTarget', document.getElementById('productTarget').value);
+                        formData.append('productCategory', document.getElementById('productCategory').value);
+                    }
+
+                    // 이미지 파일 추가
+                    if (productFile) {
+                        formData.append('productImage', productFile); 
+                    }
+                    if (modelFile) {
+                        formData.append('modelImage', modelFile);
+                    }
+
+                    response = await fetch(UNIFIED_VISION_WEBHOOK_URL, {
+                        method: 'POST',
+                        body: formData // Content-Type은 브라우저가 알아서 multipart/form-data로 세팅
+                    });
+                }
 
                 if (!response.ok) {
                     throw new Error(`Webhook Error: ${response.status} ${response.statusText}`);
@@ -727,7 +789,7 @@
                 }, 5000); // 5초마다 찌르기
                 
             } catch (error) {
-                clearInterval(statusInterval);
+                if (statusInterval) clearInterval(statusInterval);
                 if (pollingInterval) clearInterval(pollingInterval);
                 statusMessage.classList.add('hidden');
                 
