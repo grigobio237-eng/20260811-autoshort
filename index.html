@@ -372,7 +372,7 @@
         async function fetchAssets() {
             try {
                 // n8n 에셋 라이브러리 API 호출
-                const response = await fetch('https://repair-control-fee-epic.trycloudflare.com/webhook/list-assets');
+                const response = await fetch('https://n8n.gleemile.com/webhook/list-assets');
                 if (!response.ok) throw new Error('Failed to fetch assets');
                 const data = await response.json();
                 
@@ -438,13 +438,13 @@
 
         // ---------------------------------------------------------
         const CATEGORY_WEBHOOKS = {
-            "architecture": "https://repair-control-fee-epic.trycloudflare.com/webhook/d3e018ca-6f90-4f85-ab56-6283df30a210",
-            "tech": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-tech",
-            "food": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-food",
-            "health": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-health",
-            "finance": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-bank",
-            "history": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-history",
-            "art": "https://repair-control-fee-epic.trycloudflare.com/webhook/prompt-art"
+            "architecture": "https://n8n.gleemile.com/webhook/d3e018ca-6f90-4f85-ab56-6283df30a210",
+            "tech": "https://n8n.gleemile.com/webhook/prompt-tech",
+            "food": "https://n8n.gleemile.com/webhook/prompt-food",
+            "health": "https://n8n.gleemile.com/webhook/prompt-health",
+            "finance": "https://n8n.gleemile.com/webhook/prompt-bank",
+            "history": "https://n8n.gleemile.com/webhook/prompt-history",
+            "art": "https://n8n.gleemile.com/webhook/prompt-art"
         };
         
         const form = document.getElementById('unifiedForm');
@@ -463,9 +463,9 @@
         const proceedLoader = document.getElementById('proceedLoader');
 
         // n8n Webhook URLs
-        const CHECK_STATUS_WEBHOOK_URL = "https://repair-control-fee-epic.trycloudflare.com/webhook/check-script-status";
-        const STAGE2_WEBHOOK_URL = "https://repair-control-fee-epic.trycloudflare.com/webhook/stage2-url";
-        const UNIFIED_VISION_WEBHOOK_URL = "https://repair-control-fee-epic.trycloudflare.com/webhook/unified-vision-script";
+        const CHECK_STATUS_WEBHOOK_URL = "https://n8n.gleemile.com/webhook/check-script-status";
+        const STAGE2_WEBHOOK_URL = "https://n8n.gleemile.com/webhook/stage2-url";
+        const UNIFIED_VISION_WEBHOOK_URL = "https://n8n.gleemile.com/webhook/unified-vision-script";
 
         let statusInterval;
         let pollingInterval;
@@ -790,7 +790,7 @@
                 }
 
                 // 2. n8n 워크플로우4 (음성 확인) 주소 생성
-                const getVoiceUrl = `https://repair-control-fee-epic.trycloudflare.com/webhook/get-voice?title=${encodeURIComponent(finalData.title)}`;
+                const getVoiceUrl = `https://n8n.gleemile.com/webhook/get-voice?title=${encodeURIComponent(finalData.title)}`;
                 
                 // 3. 5초마다 파일이 완성되었는지 찔러보기 (Polling)
                 let stage2PollingInterval = setInterval(async () => {
