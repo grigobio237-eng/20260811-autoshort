@@ -100,9 +100,6 @@
                         <select id="modelSelect" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-200 mb-3" onchange="handleAssetChange('model')">
                             <option value="new">+ 📂 새 모델 이미지 업로드...</option>
                             <option value="" disabled>--- 저장된 모델 라이브러리 ---</option>
-                            <option value="cat_model.png">고양이 캐릭터 (cat_model.png)</option>
-                            <option value="dog_model.png">강아지 캐릭터 (dog_model.png)</option>
-                            <option value="human_a.png">사람 모델 A (human_a.png)</option>
                         </select>
                         <input type="file" id="modelUpload" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
                         <img id="modelPreview" class="hidden mt-3 w-full h-40 object-contain rounded-lg border border-slate-700 bg-slate-950/50" alt="Model Preview">
@@ -114,8 +111,6 @@
                         <select id="productSelect" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-200 mb-3" onchange="handleAssetChange('product')">
                             <option value="new">+ 📂 새 상품 이미지 업로드...</option>
                             <option value="" disabled>--- 저장된 상품 라이브러리 ---</option>
-                            <option value="vitamin_c.png">비타민C 영양제 (vitamin_c.png)</option>
-                            <option value="smart_watch.png">스마트워치 (smart_watch.png)</option>
                         </select>
                         <input type="file" id="productUpload" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
                         <img id="productPreview" class="hidden mt-3 w-full h-40 object-contain rounded-lg border border-slate-700 bg-slate-950/50" alt="Product Preview">
@@ -363,15 +358,47 @@
         function handleAssetChange(type) {
             const select = document.getElementById(`${type}Select`);
             const upload = document.getElementById(`${type}Upload`);
+            const preview = document.getElementById(`${type}Preview`);
             
             if (select.value === 'new') {
                 upload.classList.remove('hidden');
             } else {
                 upload.classList.add('hidden');
+                if (preview) preview.classList.add('hidden');
+                if (upload) upload.value = ''; // clear file input
+            }
+        }
+        
+        async function fetchAssets() {
+            try {
+                // n8n 에셋 라이브러리 API 호출
+                const response = await fetch('https://repair-control-fee-epic.trycloudflare.com/webhook/list-assets');
+                if (!response.ok) throw new Error('Failed to fetch assets');
+                const data = await response.json();
+                
+                const modelSelect = document.getElementById('modelSelect');
+                const productSelect = document.getElementById('productSelect');
+                
+                // 모델 라이브러리 채우기
+                if (data.models && data.models.length > 0) {
+                    data.models.forEach(file => {
+                        modelSelect.innerHTML += `<option value="${file}">👩‍💼 ${file}</option>`;
+                    });
+                }
+                
+                // 상품 라이브러리 채우기
+                if (data.products && data.products.length > 0) {
+                    data.products.forEach(file => {
+                        productSelect.innerHTML += `<option value="${file}">📦 ${file}</option>`;
+                    });
+                }
+            } catch (err) {
+                console.error("에셋 목록을 불러오는 중 오류 발생:", err);
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
+            fetchAssets();
             toggleAssetUI();
             handleAssetChange('model');
             handleAssetChange('product');
@@ -521,6 +548,62 @@
             
             const scenario = document.querySelector('input[name="scenario"]:checked').value;
             const topic = document.getElementById('topic').value.trim();
+            
+            let productFile = null;
+            let modelFile = null;
+            let existingProduct = null;
+            let existingModel = null;
+            
+            const modelSelect = document.getElementById('modelSelect');
+            const productSelect = document.getElementById('productSelect');
+
+            // 시나리오에 따라 필요한 파일 추출
+            if (scenario === 'product_only') {
+                if (productSelect.value === 'new') {
+                    const productInput = document.getElementById('productUpload');
+                    if (!productInput || !productInput.files || productInput.files.length === 0) {
+                        alert("새 상품 이미지를 업로드해 주세요!");
+                        return;
+                    }
+                    productFile = productInput.files[0];
+                } else {
+                    existingProduct = productSelect.value;
+                }
+            } else if (scenario === 'vlog') {
+                if (modelSelect.value === 'new') {
+                    const modelInput = document.getElementById('modelUpload');
+                    if (!modelInput || !modelInput.files || modelInput.files.length === 0) {
+                        alert("새 브이로그(인플루언서) 이미지를 업로드해 주세요!");
+                        return;
+                    }
+                    modelFile = modelInput.files[0];
+                } else {
+                    existingModel = modelSelect.value;
+                }
+            } else if (scenario === 'model_product') {
+                if (productSelect.value === 'new') {
+                    const productInput = document.getElementById('productUpload');
+                    if (!productInput || !productInput.files || productInput.files.length === 0) {
+                        alert("새 상품 이미지를 업로드해 주세요!");
+                        return;
+                    }
+                    productFile = productInput.files[0];
+                } else {
+                    existingProduct = productSelect.value;
+                }
+                
+                if (modelSelect.value === 'new') {
+                    const modelInput = document.getElementById('modelUpload');
+                    if (!modelInput || !modelInput.files || modelInput.files.length === 0) {
+                        alert("새 모델 이미지를 업로드해 주세요!");
+                        return;
+                    }
+                    modelFile = modelInput.files[0];
+                } else {
+                    existingModel = modelSelect.value;
+                }
+            }
+            
             const channelName = document.getElementById('channelName').value.trim() || '알쓸건잡';
             const brandName = document.getElementById('brandName').value.trim() || '없음';
             const category = document.getElementById('category').value;
@@ -624,12 +707,17 @@
                         formData.append('productCategory', document.getElementById('productCategory').value);
                     }
 
-                    // 이미지 파일 추가
+                    // 이미지 파일 또는 기존 라이브러리 파일명 추가
                     if (productFile) {
                         formData.append('productImage', productFile); 
+                    } else if (existingProduct) {
+                        formData.append('existingProduct', existingProduct);
                     }
+                    
                     if (modelFile) {
                         formData.append('modelImage', modelFile);
+                    } else if (existingModel) {
+                        formData.append('existingModel', existingModel);
                     }
 
                     response = await fetch(UNIFIED_VISION_WEBHOOK_URL, {
