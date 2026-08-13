@@ -610,35 +610,6 @@
             const format = document.querySelector('input[name="format"]:checked').value;
             if (!topic) return;
 
-            let productFile = null;
-            let modelFile = null;
-
-            // 시나리오에 따른 이미지 파일 검증
-            if (scenario === 'product_only') {
-                const productInput = document.getElementById('productUpload');
-                if (!productInput || !productInput.files || productInput.files.length === 0) {
-                    alert("상품 이미지를 업로드해 주세요!");
-                    return;
-                }
-                productFile = productInput.files[0];
-            } else if (scenario === 'vlog') {
-                const modelInput = document.getElementById('modelUpload');
-                if (!modelInput || !modelInput.files || modelInput.files.length === 0) {
-                    alert("브이로그(인플루언서) 이미지를 업로드해 주세요!");
-                    return;
-                }
-                modelFile = modelInput.files[0];
-            } else if (scenario === 'model_product') {
-                const productInput = document.getElementById('productUpload');
-                const modelInput = document.getElementById('modelUpload');
-                if (!productInput || !productInput.files || productInput.files.length === 0 ||
-                    !modelInput || !modelInput.files || modelInput.files.length === 0) {
-                    alert("상품 이미지와 모델 이미지를 모두 업로드해 주세요!");
-                    return;
-                }
-                productFile = productInput.files[0];
-                modelFile = modelInput.files[0];
-            }
 
             // UI 초기화 및 로딩 상태 설정
             submitBtn.disabled = true;
